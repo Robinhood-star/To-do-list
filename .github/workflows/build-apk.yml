@@ -18,15 +18,16 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # The Android SDK is preinstalled on GitHub's ubuntu runners (ANDROID_HOME),
+      # so no setup-android step is needed. Just accept the licenses.
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.10.2
 
-      # Build the APK first so a failing unit test can never block it.
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug --stacktrace
 
@@ -37,7 +38,6 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # Tests run afterwards; they report problems but don't stop the APK upload.
       - name: Run unit tests
         continue-on-error: true
         run: gradle --no-daemon testDebugUnitTest
